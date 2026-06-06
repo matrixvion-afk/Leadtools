@@ -2,185 +2,170 @@
 
 import { useState } from "react";
 
-type Result = {
-  website: string;
-  email: string;
-};
-
 export default function WebsiteExtractor() {
-  const [domains, setDomains] = useState("");
-  const [results, setResults] = useState<Result[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [websites, setWebsites] = useState("");
+  const [results, setResults] = useState<
+    { website: string; email: string }[]
+  >([]);
 
-  const handleExtract = async () => {
-    setLoading(true);
-
-    const domainList = domains
+  const handleExtract = () => {
+    const sites = websites
       .split("\n")
-      .map((d) => d.trim())
+      .map((site) => site.trim())
       .filter(Boolean);
 
-    const extracted: Result[] = domainList.map((domain) => ({
-      website: domain,
-      email: `info@${domain.replace(/^https?:\/\//, "")}`,
+    const sampleResults = sites.map((site) => ({
+      website: site,
+      email: `info@${site.replace(
+        /^https?:\/\//,
+        ""
+      )}`,
     }));
 
-    setTimeout(() => {
-      setResults(extracted);
-      setLoading(false);
-    }, 1000);
-  };
-
-  const exportCSV = () => {
-    const csv =
-      "Website,Email\n" +
-      results.map((r) => `${r.website},${r.email}`).join("\n");
-
-    const blob = new Blob([csv], {
-      type: "text/csv;charset=utf-8;",
-    });
-
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "email-results.csv";
-    link.click();
+    setResults(sampleResults);
   };
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="border-b bg-white">
-        <div className="max-w-6xl mx-auto px-6 py-5 flex justify-between">
+    <main className="min-h-screen bg-gray-100">
+
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-6 py-6 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-blue-600">
             LeadTools
           </h1>
 
-          <a href="/" className="text-blue-600">
+          <a
+            href="/"
+            className="text-blue-600 font-medium"
+          >
             Back to Home
           </a>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 py-12">
-        <h2 className="text-5xl font-bold">
-          Website Email Extractor
-        </h2>
+      {/* Main */}
+      <div className="max-w-7xl mx-auto px-6 py-12">
 
-        <p className="mt-3 text-gray-600">
-          Enter one website per line and generate results.
+        <h1 className="text-5xl font-bold mb-4">
+          Website Email Extractor
+        </h1>
+
+        <p className="text-gray-600 mb-8">
+          Enter one website per line and generate sample results.
         </p>
 
-        <div className="bg-white rounded-2xl shadow p-6 mt-10">
+        {/* Input */}
+        <div className="bg-white rounded-2xl shadow-lg p-8">
+
           <label className="font-semibold block mb-3">
             Website List
           </label>
 
           <textarea
-            rows={10}
-            value={domains}
-            onChange={(e) => setDomains(e.target.value)}
+            className="w-full h-52 border rounded-xl p-4"
             placeholder={`company.com
 business.com
 agency.com`}
-            className="w-full border rounded-lg p-4"
+            value={websites}
+            onChange={(e) =>
+              setWebsites(e.target.value)
+            }
           />
 
           <button
             onClick={handleExtract}
-            disabled={loading}
-            className="mt-6 bg-blue-600 text-white px-8 py-3 rounded-xl"
+            className="mt-6 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-semibold"
           >
-            {loading ? "Processing..." : "Extract Emails"}
+            Extract Emails
           </button>
+
         </div>
 
+        {/* Stats */}
         <div className="grid md:grid-cols-3 gap-6 mt-8">
-          <div className="bg-white rounded-xl shadow p-6">
-            <div className="text-4xl font-bold">
-              {results.length}
-            </div>
 
-            <p className="text-gray-600 mt-2">
+          <div className="bg-white rounded-xl p-6 shadow">
+            <h3 className="text-3xl font-bold">
+              {results.length}
+            </h3>
+            <p className="text-gray-600">
               Websites Processed
             </p>
           </div>
 
-          <div className="bg-white rounded-xl shadow p-6">
-            <div className="text-4xl font-bold">
+          <div className="bg-white rounded-xl p-6 shadow">
+            <h3 className="text-3xl font-bold">
               {results.length}
-            </div>
-
-            <p className="text-gray-600 mt-2">
+            </h3>
+            <p className="text-gray-600">
               Emails Found
             </p>
           </div>
 
-          <div className="bg-white rounded-xl shadow p-6">
-            <div className="text-4xl font-bold">
+          <div className="bg-white rounded-xl p-6 shadow">
+            <h3 className="text-3xl font-bold">
               98%
-            </div>
-
-            <p className="text-gray-600 mt-2">
+            </h3>
+            <p className="text-gray-600">
               Accuracy
             </p>
           </div>
+
         </div>
 
-        <div className="bg-white rounded-2xl shadow p-6 mt-8">
-          <div className="flex justify-between items-center">
-            <h3 className="text-3xl font-bold">
-              Results
-            </h3>
+        {/* Results */}
+        <div className="bg-white rounded-2xl shadow-lg p-8 mt-8">
 
-            <button
-              onClick={exportCSV}
-              className="border px-4 py-2 rounded-lg"
-            >
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-3xl font-bold">
+              Results
+            </h2>
+
+            <button className="border px-4 py-2 rounded-lg">
               Export CSV
             </button>
           </div>
 
-          <div className="overflow-x-auto mt-6">
+          <div className="overflow-x-auto">
             <table className="w-full">
+
               <thead>
                 <tr className="border-b">
-                  <th className="text-left py-3">
+                  <th className="text-left p-3">
                     Website
                   </th>
 
-                  <th className="text-left py-3">
+                  <th className="text-left p-3">
                     Email
                   </th>
                 </tr>
               </thead>
 
               <tbody>
-                {results.map((row, index) => (
+                {results.map((item, index) => (
                   <tr
                     key={index}
                     className="border-b"
                   >
-                    <td className="py-3">
-                      {row.website}
+                    <td className="p-3">
+                      {item.website}
                     </td>
 
-                    <td className="py-3">
-                      {row.email}
+                    <td className="p-3">
+                      {item.email}
                     </td>
                   </tr>
                 ))}
               </tbody>
-            </table>
 
-            {results.length === 0 && (
-              <p className="text-gray-500 mt-6">
-                No results yet.
-              </p>
-            )}
+            </table>
           </div>
+
         </div>
+
       </div>
+
     </main>
   );
 }
