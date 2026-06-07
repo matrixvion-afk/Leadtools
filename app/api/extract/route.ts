@@ -1,15 +1,20 @@
 import { NextResponse } from "next/server";
-import axios from "axios";
-import * as cheerio from "cheerio";
+import { chromium } from "playwright";
 
 export async function POST(req: Request) {
   try {
     const { websites } = await req.json();
 
+    const browser = await chromium.launch({
+      headless: true,
+    });
+
     const results = [];
 
     for (const website of websites) {
       try {
+        const page = await browser.newPage();
+
         const baseUrl = website.startsWith("http")
           ? website
           : `https://${website}`;
@@ -22,30 +27,27 @@ export async function POST(req: Request) {
           "/about-us",
           "/team",
           "/company",
-          "/privacy",
+          "/support",
         ];
 
-        const allEmails = new Set<string>();
-        const allPhones = new Set<string>();
+        const emails = new Set<string>();
+        const phones = new Set<string>();
 
         let facebook = "";
         let linkedin = "";
         let instagram = "";
         let twitter = "";
 
-        for (const page of pagesToCheck) {
+        for (const path of pagesToCheck) {
           try {
-            const pageUrl = `${baseUrl}${page}`;
+            const url = `${baseUrl}${path}`;
 
-            const { data } = await axios.get(pageUrl, {
-              timeout: 10000,
-              headers: {
-                "User-Agent":
-                  "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-              },
+            await page.goto(url, {
+              waitUntil: "networkidle",
+              timeout: 20000,
             });
 
-            const $ = cheerio.load(data);
+            const html = await page.content();
 
             const emailRegex =
               /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
@@ -53,72 +55,78 @@ export async function POST(req: Request) {
             const phoneRegex =
               /(\+?\d[\d\s().-]{7,}\d)/g;
 
-            const emails = data.match(emailRegex) || [];
-            const phones = data.match(phoneRegex) || [];
+            const foundEmails =
+              html.match(emailRegex) || [];
 
-            emails.forEach((e) =>
-              allEmails.add(e.toLowerCase())
+            const foundPhones =
+              html.match(phoneRegex) || [];
+
+            foundEmails.forEach((e: string) => {
+              emails.add(e.toLowerCase());
+            });
+
+            foundPhones.forEach((p: string) => {
+              phones.add(p.trim());
+            });
+
+            const links = await page.$$eval(
+              "a",
+              (anchors) =>
+                anchors.map(
+                  (a) => a.href || ""
+                )
             );
 
-            phones.forEach((p) =>
-              allPhones.add(p.trim())
-            );
-
-            $("a").each((_, el) => {
-              const href = $(el).attr("href") || "";
-
+            for (const link of links) {
               if (
-                href.includes("facebook.com") &&
+                link.includes("facebook.com") &&
                 !facebook
               ) {
-                facebook = href;
+                facebook = link;
               }
 
               if (
-                href.includes("linkedin.com") &&
+                link.includes("linkedin.com") &&
                 !linkedin
               ) {
-                linkedin = href;
+                linkedin = link;
               }
 
               if (
-                href.includes("instagram.com") &&
+                link.includes("instagram.com") &&
                 !instagram
               ) {
-                instagram = href;
+                instagram = link;
               }
 
               if (
-                (href.includes("twitter.com") ||
-                  href.includes("x.com")) &&
+                (link.includes("twitter.com") ||
+                  link.includes("x.com")) &&
                 !twitter
               ) {
-                twitter = href;
+                twitter = link;
               }
 
-              if (
-                href.startsWith("mailto:")
-              ) {
-                const email = href
-                  .replace("mailto:", "")
-                  .trim();
-
-                if (email) {
-                  allEmails.add(
-                    email.toLowerCase()
-                  );
-                }
+              if (link.startsWith("mailto:")) {
+                emails.add(
+                  link
+                    .replace("mailto:", "")
+                    .trim()
+                    .toLowerCase()
+                );
               }
-            });
+            }
           } catch {
             continue;
           }
         }
 
+        await page.close();
+
         results.push({
           website,
-          emails: Array.from(allEmails),
-          phones: Array.from(allPhones),
+          email: Array.from(emails)[0] || "",
+          phone: Array.from(phones)[0] || "",
           facebook,
           linkedin,
           instagram,
@@ -127,8 +135,8 @@ export async function POST(req: Request) {
       } catch {
         results.push({
           website,
-          emails: [],
-          phones: [],
+          email: "",
+          phone: "",
           facebook: "",
           linkedin: "",
           instagram: "",
@@ -136,6 +144,8 @@ export async function POST(req: Request) {
         });
       }
     }
+
+    await browser.close();
 
     return NextResponse.json(results);
   } catch {
