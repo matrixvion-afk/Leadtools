@@ -4,7 +4,8 @@ import { useState } from "react";
 
 type Result = {
   website: string;
-  email: string;
+  emails: string[];
+  phones: string[];
   facebook?: string;
   linkedin?: string;
   instagram?: string;
@@ -49,16 +50,19 @@ export default function WebsiteExtractor() {
     const csv = [
       [
         "Website",
-        "Email",
+        "Emails",
+        "Phones",
         "Facebook",
         "LinkedIn",
         "Instagram",
         "Twitter",
       ].join(","),
+
       ...results.map((r) =>
         [
           r.website,
-          r.email,
+          `"${(r.emails || []).join("; ")}"`,
+          `"${(r.phones || []).join("; ")}"`,
           r.facebook || "",
           r.linkedin || "",
           r.instagram || "",
@@ -102,8 +106,8 @@ export default function WebsiteExtractor() {
         </h1>
 
         <p className="text-gray-600 mb-8">
-          Extract public emails and social media
-          profiles from websites.
+          Extract public emails, phone numbers and social
+          media profiles from websites.
         </p>
 
         <div className="bg-white rounded-2xl shadow-lg p-8">
@@ -147,7 +151,7 @@ agency.com`}
             <h3 className="text-3xl font-bold">
               {
                 results.filter(
-                  (r) => r.email
+                  (r) => r.emails?.length > 0
                 ).length
               }
             </h3>
@@ -187,18 +191,27 @@ agency.com`}
                   <th className="text-left p-3">
                     Website
                   </th>
+
                   <th className="text-left p-3">
-                    Email
+                    Emails
                   </th>
+
+                  <th className="text-left p-3">
+                    Phones
+                  </th>
+
                   <th className="text-left p-3">
                     Facebook
                   </th>
+
                   <th className="text-left p-3">
                     LinkedIn
                   </th>
+
                   <th className="text-left p-3">
                     Instagram
                   </th>
+
                   <th className="text-left p-3">
                     Twitter/X
                   </th>
@@ -216,7 +229,15 @@ agency.com`}
                     </td>
 
                     <td className="p-3">
-                      {item.email || "-"}
+                      {item.emails?.length
+                        ? item.emails.join(", ")
+                        : "-"}
+                    </td>
+
+                    <td className="p-3">
+                      {item.phones?.length
+                        ? item.phones.join(", ")
+                        : "-"}
                     </td>
 
                     <td className="p-3">
