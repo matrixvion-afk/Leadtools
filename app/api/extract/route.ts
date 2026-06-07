@@ -60,7 +60,7 @@ export async function POST(req: Request) {
               /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
 
             const phoneRegex =
-              /(\+?\d[\d\s().-]{7,}\d)/g;
+              /(?:\+\d{1,3}[\s-]?)?(?:\(?\d{2,4}\)?[\s-]?)?\d{3,4}[\s-]?\d{3,4}/g;
 
             const foundEmails =
               data.match(emailRegex) || [];
@@ -73,11 +73,25 @@ export async function POST(req: Request) {
             });
 
             foundPhones.forEach((phone: string) => {
-              phones.add(phone.trim());
+              const cleaned = phone.replace(
+                /[^\d+]/g,
+                ""
+              );
+
+              if (
+                cleaned.length >= 8 &&
+                cleaned.length <= 15 &&
+                !cleaned.startsWith("2026") &&
+                !cleaned.startsWith("2025") &&
+                !cleaned.startsWith("2024")
+              ) {
+                phones.add(phone.trim());
+              }
             });
 
             $("a").each((_, el) => {
-              const href = $(el).attr("href") || "";
+              const href =
+                $(el).attr("href") || "";
 
               if (
                 href.includes("facebook.com") &&
@@ -108,7 +122,9 @@ export async function POST(req: Request) {
                 twitter = href;
               }
 
-              if (href.startsWith("mailto:")) {
+              if (
+                href.startsWith("mailto:")
+              ) {
                 emails.add(
                   href
                     .replace("mailto:", "")
@@ -121,7 +137,8 @@ export async function POST(req: Request) {
                 href.startsWith("/") &&
                 pagesToCheck.size < 20
               ) {
-                const lower = href.toLowerCase();
+                const lower =
+                  href.toLowerCase();
 
                 if (
                   lower.includes("contact") ||
@@ -143,11 +160,14 @@ export async function POST(req: Request) {
         results.push({
           website,
 
-          // Frontend compatibility
-          email: Array.from(emails).join(" | "),
-          phone: Array.from(phones).join(" | "),
+          email:
+            Array.from(emails).join(" | ") ||
+            "",
 
-          // Extra data
+          phone:
+            Array.from(phones).join(" | ") ||
+            "",
+
           emails: Array.from(emails),
           phones: Array.from(phones),
 
