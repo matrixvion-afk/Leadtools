@@ -10,75 +10,125 @@ export async function POST(req: Request) {
 
     for (const website of websites) {
       try {
-        const url = website.startsWith("http")
+        const baseUrl = website.startsWith("http")
           ? website
           : `https://${website}`;
 
-        const { data } = await axios.get(url, {
-          timeout: 10000,
-          headers: {
-            "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-          },
-        });
+        const pagesToCheck = [
+          "",
+          "/contact",
+          "/contact-us",
+          "/about",
+          "/about-us",
+          "/team",
+          "/company",
+          "/privacy",
+        ];
 
-        const $ = cheerio.load(data);
-
-        const emailRegex =
-          /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
-
-        const emails = data.match(emailRegex) || [];
+        const allEmails = new Set<string>();
+        const allPhones = new Set<string>();
 
         let facebook = "";
         let linkedin = "";
         let instagram = "";
         let twitter = "";
 
-        $("a").each((_, el) => {
-          const href = $(el).attr("href") || "";
+        for (const page of pagesToCheck) {
+          try {
+            const pageUrl = `${baseUrl}${page}`;
 
-          if (
-            href.includes("facebook.com") &&
-            !facebook
-          ) {
-            facebook = href;
-          }
+            const { data } = await axios.get(pageUrl, {
+              timeout: 10000,
+              headers: {
+                "User-Agent":
+                  "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+              },
+            });
 
-          if (
-            href.includes("linkedin.com") &&
-            !linkedin
-          ) {
-            linkedin = href;
-          }
+            const $ = cheerio.load(data);
 
-          if (
-            href.includes("instagram.com") &&
-            !instagram
-          ) {
-            instagram = href;
-          }
+            const emailRegex =
+              /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
 
-          if (
-            (href.includes("twitter.com") ||
-              href.includes("x.com")) &&
-            !twitter
-          ) {
-            twitter = href;
+            const phoneRegex =
+              /(\+?\d[\d\s().-]{7,}\d)/g;
+
+            const emails = data.match(emailRegex) || [];
+            const phones = data.match(phoneRegex) || [];
+
+            emails.forEach((e) =>
+              allEmails.add(e.toLowerCase())
+            );
+
+            phones.forEach((p) =>
+              allPhones.add(p.trim())
+            );
+
+            $("a").each((_, el) => {
+              const href = $(el).attr("href") || "";
+
+              if (
+                href.includes("facebook.com") &&
+                !facebook
+              ) {
+                facebook = href;
+              }
+
+              if (
+                href.includes("linkedin.com") &&
+                !linkedin
+              ) {
+                linkedin = href;
+              }
+
+              if (
+                href.includes("instagram.com") &&
+                !instagram
+              ) {
+                instagram = href;
+              }
+
+              if (
+                (href.includes("twitter.com") ||
+                  href.includes("x.com")) &&
+                !twitter
+              ) {
+                twitter = href;
+              }
+
+              if (
+                href.startsWith("mailto:")
+              ) {
+                const email = href
+                  .replace("mailto:", "")
+                  .trim();
+
+                if (email) {
+                  allEmails.add(
+                    email.toLowerCase()
+                  );
+                }
+              }
+            });
+          } catch {
+            continue;
           }
-        });
+        }
 
         results.push({
           website,
-          email: emails[0] || "",
+          emails: Array.from(allEmails),
+          phones: Array.from(allPhones),
           facebook,
           linkedin,
           instagram,
           twitter,
         });
-      } catch (error) {
+      } catch {
         results.push({
           website,
-          email: "",
+          emails: [],
+          phones: [],
           facebook: "",
           linkedin: "",
           instagram: "",
@@ -88,7 +138,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json(results);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       {
         error: "Extraction failed",
