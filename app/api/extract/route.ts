@@ -14,17 +14,6 @@ export async function POST(req: Request) {
           ? website
           : `https://${website}`;
 
-        const pagesToCheck = [
-          "",
-          "/contact",
-          "/contact-us",
-          "/about",
-          "/about-us",
-          "/team",
-          "/company",
-          "/support",
-        ];
-
         const emails = new Set<string>();
         const phones = new Set<string>();
 
@@ -33,9 +22,29 @@ export async function POST(req: Request) {
         let instagram = "";
         let twitter = "";
 
-        for (const path of pagesToCheck) {
+        const pagesToCheck = new Set<string>([
+          "",
+          "/contact",
+          "/contact-us",
+          "/about",
+          "/about-us",
+          "/team",
+          "/company",
+          "/support",
+          "/privacy",
+          "/privacy-policy",
+          "/terms",
+          "/terms-of-service",
+        ]);
+
+        const visited = new Set<string>();
+
+        for (const path of Array.from(pagesToCheck)) {
           try {
             const url = `${baseUrl}${path}`;
+
+            if (visited.has(url)) continue;
+            visited.add(url);
 
             const { data } = await axios.get(url, {
               timeout: 10000,
@@ -59,12 +68,12 @@ export async function POST(req: Request) {
             const foundPhones =
               data.match(phoneRegex) || [];
 
-            foundEmails.forEach((e: string) => {
-              emails.add(e.toLowerCase());
+            foundEmails.forEach((email: string) => {
+              emails.add(email.toLowerCase());
             });
 
-            foundPhones.forEach((p: string) => {
-              phones.add(p.trim());
+            foundPhones.forEach((phone: string) => {
+              phones.add(phone.trim());
             });
 
             $("a").each((_, el) => {
@@ -107,6 +116,24 @@ export async function POST(req: Request) {
                     .toLowerCase()
                 );
               }
+
+              if (
+                href.startsWith("/") &&
+                pagesToCheck.size < 20
+              ) {
+                const lower = href.toLowerCase();
+
+                if (
+                  lower.includes("contact") ||
+                  lower.includes("about") ||
+                  lower.includes("team") ||
+                  lower.includes("support") ||
+                  lower.includes("privacy") ||
+                  lower.includes("terms")
+                ) {
+                  pagesToCheck.add(href);
+                }
+              }
             });
           } catch {
             continue;
@@ -115,8 +142,15 @@ export async function POST(req: Request) {
 
         results.push({
           website,
-          email: Array.from(emails)[0] || "",
-          phone: Array.from(phones)[0] || "",
+
+          // Frontend compatibility
+          email: Array.from(emails).join(" | "),
+          phone: Array.from(phones).join(" | "),
+
+          // Extra data
+          emails: Array.from(emails),
+          phones: Array.from(phones),
+
           facebook,
           linkedin,
           instagram,
@@ -127,6 +161,8 @@ export async function POST(req: Request) {
           website,
           email: "",
           phone: "",
+          emails: [],
+          phones: [],
           facebook: "",
           linkedin: "",
           instagram: "",
@@ -138,8 +174,12 @@ export async function POST(req: Request) {
     return NextResponse.json(results);
   } catch {
     return NextResponse.json(
-      { error: "Extraction failed" },
-      { status: 500 }
+      {
+        error: "Extraction failed",
+      },
+      {
+        status: 500,
+      }
     );
   }
 }
