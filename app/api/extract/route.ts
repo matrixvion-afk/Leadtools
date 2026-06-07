@@ -14,15 +14,7 @@ export async function POST(req: Request) {
           ? website
           : `https://${website}`;
 
-        const emails = new Set<string>();
-        const phones = new Set<string>();
-
-        let facebook = "";
-        let linkedin = "";
-        let instagram = "";
-        let twitter = "";
-
-        const pagesToCheck = new Set<string>([
+        const pagesToCheck = [
           "",
           "/contact",
           "/contact-us",
@@ -31,23 +23,21 @@ export async function POST(req: Request) {
           "/team",
           "/company",
           "/support",
-          "/privacy",
-          "/privacy-policy",
-          "/terms",
-          "/terms-of-service",
-        ]);
+        ];
 
-        const visited = new Set<string>();
+        const emails = new Set<string>();
+        const phones = new Set<string>();
 
-        for (const initialPath of Array.from(pagesToCheck)) {
+        let facebook = "";
+        let linkedin = "";
+        let instagram = "";
+        let twitter = "";
+
+        for (const path of pagesToCheck) {
           try {
-            const startUrl = `${baseUrl}${initialPath}`;
+            const url = `${baseUrl}${path}`;
 
-            if (visited.has(startUrl)) continue;
-
-            visited.add(startUrl);
-
-            const { data } = await axios.get(startUrl, {
+            const { data } = await axios.get(url, {
               timeout: 10000,
               headers: {
                 "User-Agent":
@@ -78,8 +68,7 @@ export async function POST(req: Request) {
             });
 
             $("a").each((_, el) => {
-              const href =
-                $(el).attr("href") || "";
+              const href = $(el).attr("href") || "";
 
               if (
                 href.includes("facebook.com") &&
@@ -110,34 +99,13 @@ export async function POST(req: Request) {
                 twitter = href;
               }
 
-              if (
-                href.startsWith("mailto:")
-              ) {
+              if (href.startsWith("mailto:")) {
                 emails.add(
                   href
                     .replace("mailto:", "")
                     .trim()
                     .toLowerCase()
                 );
-              }
-
-              if (
-                href.startsWith("/") &&
-                pagesToCheck.size < 15
-              ) {
-                const lower =
-                  href.toLowerCase();
-
-                if (
-                  lower.includes("contact") ||
-                  lower.includes("about") ||
-                  lower.includes("team") ||
-                  lower.includes("support") ||
-                  lower.includes("privacy") ||
-                  lower.includes("terms")
-                ) {
-                  pagesToCheck.add(href);
-                }
               }
             });
           } catch {
@@ -147,8 +115,8 @@ export async function POST(req: Request) {
 
         results.push({
           website,
-          emails: Array.from(emails),
-          phones: Array.from(phones),
+          email: Array.from(emails)[0] || "",
+          phone: Array.from(phones)[0] || "",
           facebook,
           linkedin,
           instagram,
@@ -157,8 +125,8 @@ export async function POST(req: Request) {
       } catch {
         results.push({
           website,
-          emails: [],
-          phones: [],
+          email: "",
+          phone: "",
           facebook: "",
           linkedin: "",
           instagram: "",
@@ -170,12 +138,8 @@ export async function POST(req: Request) {
     return NextResponse.json(results);
   } catch {
     return NextResponse.json(
-      {
-        error: "Extraction failed",
-      },
-      {
-        status: 500,
-      }
+      { error: "Extraction failed" },
+      { status: 500 }
     );
   }
 }
