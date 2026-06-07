@@ -1,20 +1,15 @@
 import { NextResponse } from "next/server";
-import { chromium } from "playwright";
+import axios from "axios";
+import * as cheerio from "cheerio";
 
 export async function POST(req: Request) {
   try {
     const { websites } = await req.json();
 
-    const browser = await chromium.launch({
-      headless: true,
-    });
-
     const results = [];
 
     for (const website of websites) {
       try {
-        const page = await browser.newPage();
-
         const baseUrl = website.startsWith("http")
           ? website
           : `https://${website}`;
@@ -42,12 +37,15 @@ export async function POST(req: Request) {
           try {
             const url = `${baseUrl}${path}`;
 
-            await page.goto(url, {
-              waitUntil: "networkidle",
-              timeout: 20000,
+            const { data } = await axios.get(url, {
+              timeout: 10000,
+              headers: {
+                "User-Agent":
+                  "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+              },
             });
 
-            const html = await page.content();
+            const $ = cheerio.load(data);
 
             const emailRegex =
               /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
@@ -56,10 +54,10 @@ export async function POST(req: Request) {
               /(\+?\d[\d\s().-]{7,}\d)/g;
 
             const foundEmails =
-              html.match(emailRegex) || [];
+              data.match(emailRegex) || [];
 
             const foundPhones =
-              html.match(phoneRegex) || [];
+              data.match(phoneRegex) || [];
 
             foundEmails.forEach((e: string) => {
               emails.add(e.toLowerCase());
@@ -69,59 +67,51 @@ export async function POST(req: Request) {
               phones.add(p.trim());
             });
 
-            const links = await page.$$eval(
-              "a",
-              (anchors) =>
-                anchors.map(
-                  (a) => a.href || ""
-                )
-            );
+            $("a").each((_, el) => {
+              const href = $(el).attr("href") || "";
 
-            for (const link of links) {
               if (
-                link.includes("facebook.com") &&
+                href.includes("facebook.com") &&
                 !facebook
               ) {
-                facebook = link;
+                facebook = href;
               }
 
               if (
-                link.includes("linkedin.com") &&
+                href.includes("linkedin.com") &&
                 !linkedin
               ) {
-                linkedin = link;
+                linkedin = href;
               }
 
               if (
-                link.includes("instagram.com") &&
+                href.includes("instagram.com") &&
                 !instagram
               ) {
-                instagram = link;
+                instagram = href;
               }
 
               if (
-                (link.includes("twitter.com") ||
-                  link.includes("x.com")) &&
+                (href.includes("twitter.com") ||
+                  href.includes("x.com")) &&
                 !twitter
               ) {
-                twitter = link;
+                twitter = href;
               }
 
-              if (link.startsWith("mailto:")) {
+              if (href.startsWith("mailto:")) {
                 emails.add(
-                  link
+                  href
                     .replace("mailto:", "")
                     .trim()
                     .toLowerCase()
                 );
               }
-            }
+            });
           } catch {
             continue;
           }
         }
-
-        await page.close();
 
         results.push({
           website,
@@ -145,17 +135,11 @@ export async function POST(req: Request) {
       }
     }
 
-    await browser.close();
-
     return NextResponse.json(results);
   } catch {
     return NextResponse.json(
-      {
-        error: "Extraction failed",
-      },
-      {
-        status: 500,
-      }
+      { error: "Extraction failed" },
+      { status: 500 }
     );
   }
 }
