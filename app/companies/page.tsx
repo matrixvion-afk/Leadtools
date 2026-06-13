@@ -1,58 +1,105 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
-type Result = {
+type Company = {
+  id: number;
+  name: string;
   website: string;
-  emails: string[];
-  phones: string[];
-  facebook?: string;
-  linkedin?: string;
-  instagram?: string;
-  twitter?: string;
+  phone: string;
+  industry: string;
+  location: string;
+  size: string;
 };
 
+const sampleCompanies: Company[] = [
+  {
+    id: 1,
+    name: "HubSpot",
+    website: "hubspot.com",
+    phone: "+1 888 482 7768",
+    industry: "Marketing",
+    location: "United States",
+    size: "1000+",
+  },
+  {
+    id: 2,
+    name: "Mailchimp",
+    website: "mailchimp.com",
+    phone: "+1 800 315 5939",
+    industry: "Marketing",
+    location: "United States",
+    size: "500+",
+  },
+  {
+    id: 3,
+    name: "Semrush",
+    website: "semrush.com",
+    phone: "+1 800 815 9959",
+    industry: "Software",
+    location: "United States",
+    size: "1000+",
+  },
+  {
+    id: 4,
+    name: "Ahrefs",
+    website: "ahrefs.com",
+    phone: "+65 3165 4789",
+    industry: "SEO",
+    location: "Singapore",
+    size: "200+",
+  },
+];
+
 export default function CompaniesPage() {
-  const [companies, setCompanies] = useState<Result[]>([]);
   const [search, setSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [industry, setIndustry] = useState("");
+  const [location, setLocation] = useState("");
+  const [page, setPage] = useState(1);
 
-  const itemsPerPage = 10;
+  const perPage = 10;
 
-  useEffect(() => {
-    const stored = localStorage.getItem("leadtools_results");
+  const filtered = useMemo(() => {
+    return sampleCompanies.filter((company) => {
+      return (
+        company.name
+          .toLowerCase()
+          .includes(search.toLowerCase()) &&
+        (industry === "" ||
+          company.industry === industry) &&
+        (location === "" ||
+          company.location === location)
+      );
+    });
+  }, [search, industry, location]);
 
-    if (stored) {
-      setCompanies(JSON.parse(stored));
-    }
-  }, []);
+  const totalPages =
+    Math.ceil(filtered.length / perPage) || 1;
 
-  const filteredCompanies = useMemo(() => {
-    return companies.filter((company) =>
-      company.website
-        .toLowerCase()
-        .includes(search.toLowerCase())
-    );
-  }, [companies, search]);
-
-  const totalPages = Math.ceil(
-    filteredCompanies.length / itemsPerPage
-  );
-
-  const paginatedCompanies = filteredCompanies.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+  const currentResults = filtered.slice(
+    (page - 1) * perPage,
+    page * perPage
   );
 
   const exportCSV = () => {
     const csv = [
-      ["Website", "Emails", "Phones"].join(","),
+      [
+        "Company",
+        "Website",
+        "Phone",
+        "Industry",
+        "Location",
+        "Size",
+      ].join(","),
 
-      ...filteredCompanies.map((company) =>
+      ...filtered.map((c) =>
         [
-          company.website,
-          `"${company.emails.join("; ")}"`,
-          `"${company.phones.join("; ")}"`,
+          c.name,
+          c.website,
+          c.phone,
+          c.industry,
+          c.location,
+          c.size,
         ].join(",")
       ),
     ].join("\n");
@@ -63,143 +110,159 @@ export default function CompaniesPage() {
 
     const url = URL.createObjectURL(blob);
 
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "companies.csv";
-    link.click();
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "companies.csv";
+    a.click();
   };
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">
+    <main className="min-h-screen bg-gray-100">
+      <div className="max-w-7xl mx-auto p-6">
+        <h1 className="text-4xl font-bold mb-6">
           Companies
         </h1>
 
-        <button
-          onClick={exportCSV}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-        >
-          Export CSV
-        </button>
-      </div>
+        <div className="bg-white rounded-xl shadow p-6 mb-6">
+          <div className="grid md:grid-cols-4 gap-4">
+            <input
+              type="text"
+              placeholder="Search company..."
+              value={search}
+              onChange={(e) =>
+                setSearch(e.target.value)
+              }
+              className="border rounded-lg p-3"
+            />
 
-      <input
-        type="text"
-        placeholder="Search company..."
-        value={search}
-        onChange={(e) =>
-          setSearch(e.target.value)
-        }
-        className="border p-3 rounded w-full mb-6"
-      />
+            <select
+              value={industry}
+              onChange={(e) =>
+                setIndustry(e.target.value)
+              }
+              className="border rounded-lg p-3"
+            >
+              <option value="">
+                All Industries
+              </option>
+              <option value="Marketing">
+                Marketing
+              </option>
+              <option value="Software">
+                Software
+              </option>
+              <option value="SEO">SEO</option>
+            </select>
 
-      <div className="overflow-x-auto bg-white rounded shadow">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b bg-gray-50">
-              <th className="text-left p-3">
-                Website
-              </th>
+            <select
+              value={location}
+              onChange={(e) =>
+                setLocation(e.target.value)
+              }
+              className="border rounded-lg p-3"
+            >
+              <option value="">
+                All Locations
+              </option>
+              <option value="United States">
+                United States
+              </option>
+              <option value="Singapore">
+                Singapore
+              </option>
+            </select>
 
-              <th className="text-left p-3">
-                Emails Found
-              </th>
+            <button
+              onClick={exportCSV}
+              className="bg-blue-600 text-white rounded-lg"
+            >
+              Export CSV
+            </button>
+          </div>
+        </div>
 
-              <th className="text-left p-3">
-                Phones
-              </th>
+        <div className="bg-white rounded-xl shadow overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-50 border-b">
+                <th className="text-left p-4">
+                  Company
+                </th>
+                <th className="text-left p-4">
+                  Website
+                </th>
+                <th className="text-left p-4">
+                  Phone
+                </th>
+                <th className="text-left p-4">
+                  Industry
+                </th>
+                <th className="text-left p-4">
+                  Location
+                </th>
+                <th className="text-left p-4">
+                  Size
+                </th>
+              </tr>
+            </thead>
 
-              <th className="text-left p-3">
-                Socials
-              </th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {paginatedCompanies.map(
-              (company, index) => (
+            <tbody>
+              {currentResults.map((company) => (
                 <tr
-                  key={index}
-                  className="border-b"
+                  key={company.id}
+                  className="border-b hover:bg-gray-50"
                 >
-                  <td className="p-3">
+                  <td className="p-4 font-medium">
+                    {company.name}
+                  </td>
+
+                  <td className="p-4">
                     {company.website}
                   </td>
 
-                  <td className="p-3">
-                    {company.emails.length}
+                  <td className="p-4">
+                    {company.phone}
                   </td>
 
-                  <td className="p-3">
-                    {company.phones.length}
+                  <td className="p-4">
+                    {company.industry}
                   </td>
 
-                  <td className="p-3 space-x-2">
-                    {company.linkedin && (
-                      <a
-                        href={company.linkedin}
-                        target="_blank"
-                        className="text-blue-600"
-                      >
-                        LinkedIn
-                      </a>
-                    )}
+                  <td className="p-4">
+                    {company.location}
+                  </td>
 
-                    {company.facebook && (
-                      <a
-                        href={company.facebook}
-                        target="_blank"
-                        className="text-blue-600"
-                      >
-                        Facebook
-                      </a>
-                    )}
-
-                    {company.instagram && (
-                      <a
-                        href={company.instagram}
-                        target="_blank"
-                        className="text-pink-600"
-                      >
-                        Instagram
-                      </a>
-                    )}
+                  <td className="p-4">
+                    {company.size}
                   </td>
                 </tr>
-              )
-            )}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="flex justify-center gap-3 mt-6">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage(page - 1)}
+            className="border px-4 py-2 rounded"
+          >
+            Previous
+          </button>
+
+          <span className="px-4 py-2">
+            Page {page} of {totalPages}
+          </span>
+
+          <button
+            disabled={page === totalPages}
+            onClick={() => setPage(page + 1)}
+            className="border px-4 py-2 rounded"
+          >
+            Next
+          </button>
+        </div>
       </div>
-
-      <div className="flex gap-2 mt-6">
-        <button
-          disabled={currentPage === 1}
-          onClick={() =>
-            setCurrentPage((p) => p - 1)
-          }
-          className="border px-4 py-2 rounded"
-        >
-          Previous
-        </button>
-
-        <span className="px-4 py-2">
-          Page {currentPage} of {totalPages || 1}
-        </span>
-
-        <button
-          disabled={
-            currentPage === totalPages
-          }
-          onClick={() =>
-            setCurrentPage((p) => p + 1)
-          }
-          className="border px-4 py-2 rounded"
-        >
-          Next
-        </button>
-      </div>
-    </div>
+    </main>
   );
 }
