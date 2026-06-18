@@ -31,9 +31,9 @@ export async function POST(req: Request) {
     const emailRegex =
       /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
 
-    // IMPROVED PHONE REGEX
+    // STRICT PHONE REGEX
     const phoneRegex =
-      /(?:\+?\d{1,3}[\s.-]?)?(?:\(?\d{3}\)?[\s.-]?)\d{3}[\s.-]?\d{4}/g;
+      /(?:\+?1[\s.-]?)?(?:\(?[2-9]\d{2}\)?[\s.-]?)[2-9]\d{2}[\s.-]?\d{4}/g;
 
     const results = await Promise.all(
       websites.map(async (website: string) => {
@@ -68,22 +68,21 @@ export async function POST(req: Request) {
 
             // EMAILS
             const foundEmails = data.match(emailRegex) || [];
-            foundEmails.forEach((email: string) =>
-              emails.add(email.toLowerCase())
-            );
+
+            foundEmails.forEach((email: string) => {
+              emails.add(email.toLowerCase());
+            });
 
             // PHONES
             const foundPhones = data.match(phoneRegex) || [];
 
             foundPhones.forEach((phone: string) => {
-              const cleaned = phone.replace(/[^\d+]/g, "");
+              const cleaned = phone.replace(/\D/g, "");
 
               if (
-                cleaned.length >= 10 &&
-                cleaned.length <= 15 &&
-                !cleaned.startsWith("2026") &&
-                !cleaned.startsWith("2025") &&
-                !cleaned.startsWith("2024")
+                cleaned.length === 10 ||
+                (cleaned.length === 11 &&
+                  cleaned.startsWith("1"))
               ) {
                 phones.add(phone.trim());
               }
