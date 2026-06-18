@@ -74,6 +74,40 @@ export default function LeadFinderPage() {
         padding: "40px",
       }}
     >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: "25px",
+          marginBottom: "40px",
+          fontSize: "16px",
+        }}
+      >
+        <a href="/lead-finder" style={{ color: "#fff" }}>
+          Lead Finder
+        </a>
+
+        <a href="/website-extractor" style={{ color: "#fff" }}>
+          Extractor
+        </a>
+
+        <a href="/pricing" style={{ color: "#fff" }}>
+          Pricing
+        </a>
+
+        <a href="/contact" style={{ color: "#fff" }}>
+          Contact
+        </a>
+
+        <a href="/login" style={{ color: "#fff" }}>
+          Login
+        </a>
+
+        <a href="/register" style={{ color: "#fff" }}>
+          Register
+        </a>
+      </div>
+
       <h1>Lead Finder</h1>
 
       <input
