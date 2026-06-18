@@ -10,12 +10,29 @@ export default function Home() {
           </h1>
 
           <div className="flex gap-6 font-medium">
-            <a href="/" className="hover:text-blue-600">Home</a>
-            <a href="/website-extractor" className="hover:text-blue-600">Extractor</a>
-            <a href="/pricing" className="hover:text-blue-600">Pricing</a>
-            <a href="/contact" className="hover:text-blue-600">Contact</a>
-            <a href="/login" className="hover:text-blue-600">Login</a>
-            <a href="/register" className="hover:text-blue-600">Register</a>
+            <a href="/lead-finder" className="hover:text-blue-600">
+              Lead Finder
+            </a>
+
+            <a href="/website-extractor" className="hover:text-blue-600">
+              Extractor
+            </a>
+
+            <a href="/pricing" className="hover:text-blue-600">
+              Pricing
+            </a>
+
+            <a href="/contact" className="hover:text-blue-600">
+              Contact
+            </a>
+
+            <a href="/login" className="hover:text-blue-600">
+              Login
+            </a>
+
+            <a href="/register" className="hover:text-blue-600">
+              Register
+            </a>
           </div>
         </div>
       </nav>
