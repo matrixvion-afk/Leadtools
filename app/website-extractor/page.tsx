@@ -15,7 +15,9 @@ type Result = {
 export default function WebsiteExtractor() {
   const [websites, setWebsites] = useState("");
   const [results, setResults] = useState<Result[]>([]);
-  const [loading, setLoading] = useState(false);
+ const [loading, setLoading] = useState(false);
+const [processed, setProcessed] = useState(0);
+const [total, setTotal] = useState(0);
 
   const handleExtract = async () => {
     try {
