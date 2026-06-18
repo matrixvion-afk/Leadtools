@@ -73,20 +73,32 @@ export async function POST(req: Request) {
               emails.add(email.toLowerCase());
             });
 
-            // PHONES
-            const foundPhones = data.match(phoneRegex) || [];
+// PHONES
+const foundPhones = data.match(phoneRegex) || [];
 
-            foundPhones.forEach((phone: string) => {
-              const cleaned = phone.replace(/\D/g, "");
+foundPhones.forEach((phone: string) => {
+  const cleaned = phone.replace(/\D/g, "");
 
-              if (
-                cleaned.length === 10 ||
-                (cleaned.length === 11 &&
-                  cleaned.startsWith("1"))
-              ) {
-                phones.add(phone.trim());
-              }
-            });
+  // Reject obvious junk numbers
+  if (
+    cleaned.startsWith("000") ||
+    cleaned.startsWith("111") ||
+    /^(\d)\1+$/.test(cleaned)
+  ) {
+    return;
+  }
+
+  // Validate realistic US/Canada phone numbers
+  if (
+    (cleaned.length === 10 &&
+      /^[2-9]\d{2}[2-9]\d{6}$/.test(cleaned)) ||
+    (cleaned.length === 11 &&
+      cleaned.startsWith("1") &&
+      /^[1][2-9]\d{2}[2-9]\d{6}$/.test(cleaned))
+  ) {
+    phones.add(phone.trim());
+  }
+});
 
             // SOCIAL LINKS
             $("a").each((_, el) => {
