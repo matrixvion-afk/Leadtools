@@ -28,12 +28,13 @@ export async function POST(req: Request) {
       "/terms-of-service",
     ];
 
-    const emailRegex = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
+    const emailRegex =
+      /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
 
+    // IMPROVED PHONE REGEX
     const phoneRegex =
-      /(?:\+\d{1,3}[\s-]?)?(?:\(?\d{2,4}\)?[\s-]?)?\d{3,4}[\s-]?\d{3,4}/g;
+      /(?:\+?\d{1,3}[\s.-]?)?(?:\(?\d{3}\)?[\s.-]?)\d{3}[\s.-]?\d{4}/g;
 
-    // 🔥 PARALLEL PROCESSING (FAST)
     const results = await Promise.all(
       websites.map(async (website: string) => {
         const baseUrl = normalizeWebsite(website);
@@ -73,11 +74,12 @@ export async function POST(req: Request) {
 
             // PHONES
             const foundPhones = data.match(phoneRegex) || [];
+
             foundPhones.forEach((phone: string) => {
               const cleaned = phone.replace(/[^\d+]/g, "");
 
               if (
-                cleaned.length >= 8 &&
+                cleaned.length >= 10 &&
                 cleaned.length <= 15 &&
                 !cleaned.startsWith("2026") &&
                 !cleaned.startsWith("2025") &&
@@ -94,22 +96,29 @@ export async function POST(req: Request) {
               if (!facebook && href.includes("facebook.com")) {
                 facebook = href;
               }
+
               if (!linkedin && href.includes("linkedin.com")) {
                 linkedin = href;
               }
+
               if (!instagram && href.includes("instagram.com")) {
                 instagram = href;
               }
+
               if (
                 !twitter &&
-                (href.includes("twitter.com") || href.includes("x.com"))
+                (href.includes("twitter.com") ||
+                  href.includes("x.com"))
               ) {
                 twitter = href;
               }
 
               if (href.startsWith("mailto:")) {
                 emails.add(
-                  href.replace("mailto:", "").trim().toLowerCase()
+                  href
+                    .replace("mailto:", "")
+                    .trim()
+                    .toLowerCase()
                 );
               }
             });
@@ -122,12 +131,14 @@ export async function POST(req: Request) {
               if (
                 href.startsWith("/") &&
                 pagesToCheck.length < 20 &&
-                (lower.includes("contact") ||
+                (
+                  lower.includes("contact") ||
                   lower.includes("about") ||
                   lower.includes("team") ||
                   lower.includes("support") ||
                   lower.includes("privacy") ||
-                  lower.includes("terms"))
+                  lower.includes("terms")
+                )
               ) {
                 pagesToCheck.push(href);
               }
