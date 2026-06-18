@@ -4,7 +4,6 @@ export async function POST(req: Request) {
   try {
     const { keyword, limit } = await req.json();
 
-    // FIXED
     const apiKey = process.env.GOOGLE_PLACES_API_KEY;
 
     if (!apiKey) {
@@ -31,10 +30,11 @@ export async function POST(req: Request) {
       }
 
       const res = await fetch(url);
+      const data = await res.json();
+
       console.log("GOOGLE STATUS:", data.status);
       console.log("GOOGLE RESULTS:", data.results?.length);
       console.log("GOOGLE FULL:", JSON.stringify(data));
-
       console.log("GOOGLE RESPONSE:", data);
 
       allPlaces = [...allPlaces, ...(data.results || [])];
