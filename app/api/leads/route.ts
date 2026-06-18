@@ -31,7 +31,9 @@ export async function POST(req: Request) {
       }
 
       const res = await fetch(url);
-      const data = await res.json();
+      console.log("GOOGLE STATUS:", data.status);
+console.log("GOOGLE RESULTS:", data.results?.length);
+console.log("GOOGLE FULL:", JSON.stringify(data));
 
       console.log("GOOGLE RESPONSE:", data);
 
