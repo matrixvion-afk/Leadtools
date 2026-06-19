@@ -14,7 +14,7 @@ type Company = {
 
 export default function LeadFinderPage() {
   const [keyword, setKeyword] = useState("");
-  const [country, setCountry] = useState("USA");
+  const [location, setLocation] = useState("");
   const [limit, setLimit] = useState("50");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<Company[]>([]);
@@ -28,7 +28,10 @@ export default function LeadFinderPage() {
       return;
     }
 
-    alert("Search started");
+    if (!location) {
+      alert("Please enter a location");
+      return;
+    }
 
     setLoading(true);
     setError("");
@@ -41,7 +44,8 @@ export default function LeadFinderPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          keyword: `${keyword} ${country}`,
+          keyword,
+          location,
           limit: Number(limit),
         }),
       });
@@ -110,20 +114,47 @@ export default function LeadFinderPage() {
 
       <h1>Lead Finder</h1>
 
-      <input
-        value={keyword}
-        onChange={(e) => setKeyword(e.target.value)}
-        placeholder="Food Wholesalers"
+      <div
         style={{
-          padding: "10px",
-          marginRight: "10px",
-          color: "#000",
+          display: "flex",
+          gap: "10px",
+          marginTop: "20px",
+          marginBottom: "20px",
+          flexWrap: "wrap",
         }}
-      />
+      >
+        <input
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+          placeholder="Keyword (e.g. Food Wholesalers)"
+          style={{
+            padding: "10px",
+            color: "#000",
+            minWidth: "250px",
+          }}
+        />
 
-      <button onClick={handleSearch}>
-        {loading ? "Searching..." : "Find Companies"}
-      </button>
+        <input
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          placeholder="Location (e.g. Texas, USA)"
+          style={{
+            padding: "10px",
+            color: "#000",
+            minWidth: "250px",
+          }}
+        />
+
+        <button
+          onClick={handleSearch}
+          style={{
+            padding: "10px 20px",
+            cursor: "pointer",
+          }}
+        >
+          {loading ? "Searching..." : "Find Companies"}
+        </button>
+      </div>
 
       {error && (
         <div style={{ color: "red", marginTop: "20px" }}>
@@ -134,6 +165,43 @@ export default function LeadFinderPage() {
       <div style={{ marginTop: "20px" }}>
         Results: {results.length}
       </div>
+
+      {results.length > 0 && (
+        <div style={{ marginTop: "20px" }}>
+          {results.map((item, index) => (
+            <div
+              key={index}
+              style={{
+                border: "1px solid #334155",
+                padding: "15px",
+                marginBottom: "10px",
+                borderRadius: "8px",
+              }}
+            >
+              <h3>{item.company}</h3>
+
+              {item.website && (
+                <p>
+                  Website:{" "}
+                  <a
+                    href={item.website}
+                    target="_blank"
+                    style={{ color: "#60a5fa" }}
+                  >
+                    {item.website}
+                  </a>
+                </p>
+              )}
+
+              {item.email && <p>Email: {item.email}</p>}
+              {item.phone && <p>Phone: {item.phone}</p>}
+              {item.address && <p>Address: {item.address}</p>}
+              {item.linkedin && <p>LinkedIn: {item.linkedin}</p>}
+              {item.facebook && <p>Facebook: {item.facebook}</p>}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

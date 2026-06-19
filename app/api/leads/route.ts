@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const { keyword, limit } = await req.json();
+    const { keyword, location, limit } = await req.json();
+
+    const searchQuery = `${keyword} in ${location}`;
 
     const apiKey = process.env.GOOGLE_PLACES_API_KEY;
 
@@ -22,7 +24,7 @@ export async function POST(req: Request) {
     for (let i = 0; i < 3; i++) {
       let url =
         `https://maps.googleapis.com/maps/api/place/textsearch/json` +
-        `?query=${encodeURIComponent(keyword)}&key=${apiKey}`;
+        `?query=${encodeURIComponent(searchQuery)}&key=${apiKey}`;
 
       if (nextPageToken) {
         url += `&pagetoken=${nextPageToken}`;
