@@ -6,16 +6,12 @@ type Company = {
   company: string;
   website: string;
   email?: string;
-  phone?: string;
-  linkedin?: string;
-  facebook?: string;
-  address?: string;
 };
 
 export default function LeadFinderPage() {
   const [keyword, setKeyword] = useState("");
   const [location, setLocation] = useState("");
-  const [limit, setLimit] = useState("50");
+  const [limit] = useState("300");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<Company[]>([]);
   const [error, setError] = useState("");
@@ -72,7 +68,7 @@ export default function LeadFinderPage() {
         padding: "40px",
       }}
     >
-      {/* Menu */}
+      {/* Top Menu */}
       <div
         style={{
           display: "flex",
@@ -119,7 +115,7 @@ export default function LeadFinderPage() {
         Lead Finder
       </h1>
 
-      {/* Search Section */}
+      {/* Search */}
       <div
         style={{
           display: "flex",
@@ -139,7 +135,6 @@ export default function LeadFinderPage() {
             border: "2px solid #3b82f6",
             borderRadius: "8px",
             minWidth: "280px",
-            outline: "none",
           }}
         />
 
@@ -154,7 +149,6 @@ export default function LeadFinderPage() {
             border: "2px solid #3b82f6",
             borderRadius: "8px",
             minWidth: "280px",
-            outline: "none",
           }}
         />
 
@@ -163,7 +157,7 @@ export default function LeadFinderPage() {
           style={{
             padding: "12px 20px",
             background: "#2563eb",
-            color: "#ffffff",
+            color: "#fff",
             border: "none",
             borderRadius: "8px",
             cursor: "pointer",
@@ -187,57 +181,104 @@ export default function LeadFinderPage() {
 
       <div
         style={{
-          marginBottom: "20px",
           fontSize: "18px",
           fontWeight: "bold",
+          marginBottom: "20px",
         }}
       >
         Results: {results.length}
       </div>
 
+      {/* Results */}
       {results.length > 0 && (
-        <div>
-          {results.map((item, index) => (
-            <div
-              key={index}
-              style={{
-                border: "1px solid #334155",
-                background: "#1e293b",
-                padding: "16px",
-                marginBottom: "12px",
-                borderRadius: "10px",
-              }}
-            >
-              <h3
-                style={{
-                  color: "#60a5fa",
-                  marginBottom: "10px",
-                }}
-              >
-                {item.company}
-              </h3>
+        <div
+          style={{
+            overflowX: "auto",
+          }}
+        >
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              background: "#1e293b",
+            }}
+          >
+            <thead>
+              <tr>
+                <th
+                  style={{
+                    border: "1px solid #334155",
+                    padding: "12px",
+                    textAlign: "left",
+                  }}
+                >
+                  Company Name
+                </th>
 
-              {item.website && (
-                <p>
-                  Website:{" "}
-                  <a
-                    href={item.website}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{ color: "#60a5fa" }}
+                <th
+                  style={{
+                    border: "1px solid #334155",
+                    padding: "12px",
+                    textAlign: "left",
+                  }}
+                >
+                  Website
+                </th>
+
+                <th
+                  style={{
+                    border: "1px solid #334155",
+                    padding: "12px",
+                    textAlign: "left",
+                  }}
+                >
+                  Email
+                </th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {results.map((item, index) => (
+                <tr key={index}>
+                  <td
+                    style={{
+                      border: "1px solid #334155",
+                      padding: "12px",
+                    }}
                   >
-                    {item.website}
-                  </a>
-                </p>
-              )}
+                    {item.company}
+                  </td>
 
-              {item.email && <p>Email: {item.email}</p>}
-              {item.phone && <p>Phone: {item.phone}</p>}
-              {item.address && <p>Address: {item.address}</p>}
-              {item.linkedin && <p>LinkedIn: {item.linkedin}</p>}
-              {item.facebook && <p>Facebook: {item.facebook}</p>}
-            </div>
-          ))}
+                  <td
+                    style={{
+                      border: "1px solid #334155",
+                      padding: "12px",
+                    }}
+                  >
+                    <a
+                      href={item.website}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        color: "#60a5fa",
+                      }}
+                    >
+                      {item.website}
+                    </a>
+                  </td>
+
+                  <td
+                    style={{
+                      border: "1px solid #334155",
+                      padding: "12px",
+                    }}
+                  >
+                    {item.email || "No email found"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
