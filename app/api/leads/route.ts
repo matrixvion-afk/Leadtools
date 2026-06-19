@@ -2,89 +2,53 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const { keyword, location, limit } = await req.json();
+    const { keyword, location, limit = 50 } = await req.json();
 
-    const searchQuery = `${keyword} in ${location}`;
+    const serperApiKey = process.env.SERPER_API_KEY;
 
-    const apiKey = process.env.GOOGLE_PLACES_API_KEY;
-
-    if (!apiKey) {
+    if (!serperApiKey) {
       return NextResponse.json({
         success: false,
-        error: "Missing API key",
+        error: "Missing SERPER_API_KEY",
       });
     }
 
-    // =====================================================
-    // STEP 1: GOOGLE PLACES SEARCH (PAGINATION)
-    // =====================================================
-    let allPlaces: any[] = [];
-    let nextPageToken: string | undefined;
+    // ==========================================
+    // STEP 1: SEARCH COMPANIES USING SERPER
+    // ==========================================
+    const searchQuery = `${keyword} ${location}`;
 
-    for (let i = 0; i < 3; i++) {
-      let url =
-        `https://maps.googleapis.com/maps/api/place/textsearch/json` +
-        `?query=${encodeURIComponent(searchQuery)}&key=${apiKey}`;
+    const serperRes = await fetch("https://google.serper.dev/search", {
+      method: "POST",
+      headers: {
+        "X-API-KEY": serperApiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        q: searchQuery,
+        num: limit,
+      }),
+    });
 
-      if (nextPageToken) {
-        url += `&pagetoken=${nextPageToken}`;
-        await new Promise((r) => setTimeout(r, 2000));
-      }
+    const serperData = await serperRes.json();
 
-      const res = await fetch(url);
-      const data = await res.json();
+    console.log("SERPER RESPONSE:", serperData);
 
-      console.log("GOOGLE STATUS:", data.status);
-      console.log("GOOGLE RESULTS:", data.results?.length);
-      console.log("GOOGLE FULL:", JSON.stringify(data));
-      console.log("GOOGLE RESPONSE:", data);
+    const organic = serperData?.organic || [];
 
-      allPlaces = [...allPlaces, ...(data.results || [])];
+    const companies = organic.map((item: any) => ({
+      company: item.title || "",
+      website: item.link || "",
+      address: item.snippet || "",
+    }));
 
-      nextPageToken = data.next_page_token;
-
-      if (!nextPageToken) break;
-    }
-
-    const places = allPlaces.slice(0, limit || 20);
-
-    // =====================================================
-    // STEP 2: GET WEBSITE
-    // =====================================================
-    const enrichedPlaces = await Promise.all(
-      places.map(async (place: any) => {
-        try {
-          if (!place.place_id) {
-            return { ...place, website: "" };
-          }
-
-          const detailsUrl =
-            `https://maps.googleapis.com/maps/api/place/details/json` +
-            `?place_id=${place.place_id}&fields=website&key=${apiKey}`;
-
-          const res = await fetch(detailsUrl);
-          const data = await res.json();
-
-          return {
-            ...place,
-            website: data.result?.website || "",
-          };
-        } catch {
-          return {
-            ...place,
-            website: "",
-          };
-        }
-      })
-    );
-
-    const websites = enrichedPlaces
-      .map((p: any) => p.website)
+    const websites = companies
+      .map((c: any) => c.website)
       .filter(Boolean);
 
-    // =====================================================
-    // STEP 3: CALL EMAIL EXTRACTOR
-    // =====================================================
+    // ==========================================
+    // STEP 2: EXTRACT EMAILS
+    // ==========================================
     const baseUrl =
       process.env.NEXT_PUBLIC_BASE_URL ||
       "http://localhost:3000";
@@ -96,26 +60,29 @@ export async function POST(req: Request) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ websites }),
+        body: JSON.stringify({
+          websites,
+        }),
       }
     );
 
     const extracted = await extractRes.json();
 
-    // =====================================================
-    // STEP 4: COMBINE RESULTS
-    // =====================================================
-    const finalResults = enrichedPlaces.map(
-      (p: any, i: number) => ({
-        company: p.name || "",
-        address: p.formatted_address || "",
-        rating: p.rating || null,
-        website: p.website || "",
-        emails: extracted[i]?.emails || [],
-        phones: extracted[i]?.phones || [],
-        facebook: extracted[i]?.facebook || "",
-        linkedin: extracted[i]?.linkedin || "",
-        instagram: extracted[i]?.instagram || "",
+    // ==========================================
+    // STEP 3: MERGE RESULTS
+    // ==========================================
+    const finalResults = companies.map(
+      (company: any, index: number) => ({
+        company: company.company,
+        website: company.website,
+        address: company.address,
+
+        emails: extracted[index]?.emails || [],
+        phones: extracted[index]?.phones || [],
+
+        facebook: extracted[index]?.facebook || "",
+        linkedin: extracted[index]?.linkedin || "",
+        instagram: extracted[index]?.instagram || "",
       })
     );
 
@@ -125,6 +92,8 @@ export async function POST(req: Request) {
       results: finalResults,
     });
   } catch (err: any) {
+    console.error(err);
+
     return NextResponse.json({
       success: false,
       error: "Lead generation failed",
