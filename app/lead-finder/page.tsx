@@ -21,8 +21,6 @@ export default function LeadFinderPage() {
   const [error, setError] = useState("");
 
   const handleSearch = async () => {
-    console.log("BUTTON CLICKED");
-
     if (!keyword) {
       alert("Please enter a keyword");
       return;
@@ -50,11 +48,7 @@ export default function LeadFinderPage() {
         }),
       });
 
-      console.log("STATUS:", res.status);
-
       const data = await res.json();
-
-      console.log("API RESPONSE:", data);
 
       if (!data?.success) {
         setError(data?.error || data?.details || "Something went wrong");
@@ -62,7 +56,7 @@ export default function LeadFinderPage() {
         setResults(data.results || []);
       }
     } catch (err) {
-      console.error("FETCH ERROR:", err);
+      console.error(err);
       setError("Failed to fetch leads");
     }
 
@@ -78,6 +72,7 @@ export default function LeadFinderPage() {
         padding: "40px",
       }}
     >
+      {/* Menu */}
       <div
         style={{
           display: "flex",
@@ -112,14 +107,24 @@ export default function LeadFinderPage() {
         </a>
       </div>
 
-      <h1>Lead Finder</h1>
+      {/* Title */}
+      <h1
+        style={{
+          fontSize: "42px",
+          marginBottom: "25px",
+          color: "#60a5fa",
+          fontWeight: "bold",
+        }}
+      >
+        Lead Finder
+      </h1>
 
+      {/* Search Section */}
       <div
         style={{
           display: "flex",
-          gap: "10px",
-          marginTop: "20px",
-          marginBottom: "20px",
+          gap: "12px",
+          marginBottom: "25px",
           flexWrap: "wrap",
         }}
       >
@@ -128,9 +133,13 @@ export default function LeadFinderPage() {
           onChange={(e) => setKeyword(e.target.value)}
           placeholder="Keyword (e.g. Food Wholesalers)"
           style={{
-            padding: "10px",
-            color: "#000",
-            minWidth: "250px",
+            padding: "12px",
+            background: "#ffffff",
+            color: "#000000",
+            border: "2px solid #3b82f6",
+            borderRadius: "8px",
+            minWidth: "280px",
+            outline: "none",
           }}
         />
 
@@ -139,17 +148,26 @@ export default function LeadFinderPage() {
           onChange={(e) => setLocation(e.target.value)}
           placeholder="Location (e.g. Texas, USA)"
           style={{
-            padding: "10px",
-            color: "#000",
-            minWidth: "250px",
+            padding: "12px",
+            background: "#ffffff",
+            color: "#000000",
+            border: "2px solid #3b82f6",
+            borderRadius: "8px",
+            minWidth: "280px",
+            outline: "none",
           }}
         />
 
         <button
           onClick={handleSearch}
           style={{
-            padding: "10px 20px",
+            padding: "12px 20px",
+            background: "#2563eb",
+            color: "#ffffff",
+            border: "none",
+            borderRadius: "8px",
             cursor: "pointer",
+            fontWeight: "bold",
           }}
         >
           {loading ? "Searching..." : "Find Companies"}
@@ -157,28 +175,47 @@ export default function LeadFinderPage() {
       </div>
 
       {error && (
-        <div style={{ color: "red", marginTop: "20px" }}>
+        <div
+          style={{
+            color: "#ef4444",
+            marginBottom: "20px",
+          }}
+        >
           {error}
         </div>
       )}
 
-      <div style={{ marginTop: "20px" }}>
+      <div
+        style={{
+          marginBottom: "20px",
+          fontSize: "18px",
+          fontWeight: "bold",
+        }}
+      >
         Results: {results.length}
       </div>
 
       {results.length > 0 && (
-        <div style={{ marginTop: "20px" }}>
+        <div>
           {results.map((item, index) => (
             <div
               key={index}
               style={{
                 border: "1px solid #334155",
-                padding: "15px",
-                marginBottom: "10px",
-                borderRadius: "8px",
+                background: "#1e293b",
+                padding: "16px",
+                marginBottom: "12px",
+                borderRadius: "10px",
               }}
             >
-              <h3>{item.company}</h3>
+              <h3
+                style={{
+                  color: "#60a5fa",
+                  marginBottom: "10px",
+                }}
+              >
+                {item.company}
+              </h3>
 
               {item.website && (
                 <p>
@@ -186,6 +223,7 @@ export default function LeadFinderPage() {
                   <a
                     href={item.website}
                     target="_blank"
+                    rel="noreferrer"
                     style={{ color: "#60a5fa" }}
                   >
                     {item.website}
