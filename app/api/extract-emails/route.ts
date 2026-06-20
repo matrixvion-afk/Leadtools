@@ -15,16 +15,31 @@ export async function POST(req: Request) {
         ? website
         : `https://${website}`;
 
-    const pagesToCheck = [
-      "",
-      "/contact",
-      "/contact-us",
-      "/about",
-      "/about-us",
-      "/team",
-      "/company",
-      "/support",
-    ];
+const pagesToCheck = [
+  "",
+  "/contact",
+  "/contact-us",
+  "/about",
+  "/about-us",
+  "/team",
+  "/company",
+  "/support",
+  "/sales",
+  "/wholesale",
+  "/distributors",
+  "/dealer",
+  "/dealers",
+  "/customer-service",
+  "/help",
+  "/faq",
+  "/staff",
+  "/management",
+  "/leadership",
+  "/privacy",
+  "/terms",
+  "/shipping",
+  "/returns",
+];
 
     const emailRegex =
       /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;

@@ -13,36 +13,72 @@ export async function POST(req: Request) {
       });
     }
 
+    const blockedDomains: string[] = [];
+
+    const searches = [
+      `${keyword} wholesalers ${location}`,
+      `${keyword} suppliers ${location}`,
+      `${keyword} distributors ${location}`,
+      `${keyword} manufacturers ${location}`,
+      `${keyword} exporters ${location}`,
+      `${keyword} importers ${location}`,
+      `${keyword} companies ${location}`,
+    ];
+
+    let allCompanies: any[] = [];
+    const seenWebsites = new Set<string>();
+
     // ==========================================
     // STEP 1: SEARCH COMPANIES USING SERPER
     // ==========================================
-    const searchQuery = `${keyword} ${location}`;
+    for (const searchQuery of searches) {
+      try {
+        const serperRes = await fetch(
+          "https://google.serper.dev/search",
+          {
+            method: "POST",
+            headers: {
+              "X-API-KEY": serperApiKey,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              q: searchQuery,
+              num: limit,
+            }),
+          }
+        );
 
-    const serperRes = await fetch("https://google.serper.dev/search", {
-      method: "POST",
-      headers: {
-        "X-API-KEY": serperApiKey,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        q: searchQuery,
-        num: limit,
-      }),
-    });
+        const serperData = await serperRes.json();
 
-    const serperData = await serperRes.json();
+        const organic = serperData?.organic || [];
 
-    console.log("SERPER RESPONSE:", serperData);
+        for (const item of organic) {
+          const website = item.link || "";
 
-    const organic = serperData?.organic || [];
+          if (!website) continue;
 
-    const companies = organic.map((item: any) => ({
-      company: item.title || "",
-      website: item.link || "",
-    }));
+          const isBlocked = blockedDomains.some((domain) =>
+            website.includes(domain)
+          );
 
-    const websites = companies
-      .map((c: any) => c.website)
+          if (isBlocked) continue;
+
+          if (seenWebsites.has(website)) continue;
+
+          seenWebsites.add(website);
+
+          allCompanies.push({
+            company: item.title || "",
+            website,
+          });
+        }
+      } catch (err) {
+        console.error("Search failed:", searchQuery, err);
+      }
+    }
+
+    const websites = allCompanies
+      .map((c) => c.website)
       .filter(Boolean);
 
     // ==========================================
@@ -70,12 +106,12 @@ export async function POST(req: Request) {
     // ==========================================
     // STEP 3: FINAL RESULTS
     // ==========================================
-    const finalResults = companies.map(
+    const finalResults = allCompanies.map(
       (company: any, index: number) => ({
         company: company.company,
         website: company.website,
         email:
-          extracted[index]?.emails?.[0] ||
+          extracted[index]?.emails?.join(" | ") ||
           "No email found",
       })
     );
