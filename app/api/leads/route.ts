@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const { keyword, location, limit = 50 } = await req.json();
+    const { keyword, location } = await req.json();
 
     const serperApiKey = process.env.SERPER_API_KEY;
 
@@ -13,7 +13,13 @@ export async function POST(req: Request) {
       });
     }
 
-    const blockedDomains: string[] = [];
+    const blockedDomains = [
+      "yelp.com",
+      "indeed.com",
+      "glassdoor.com",
+      "wikipedia.org",
+      "eater.com",
+    ];
 
     const searches = [
       `${keyword} wholesalers ${location}`,
@@ -29,7 +35,7 @@ export async function POST(req: Request) {
     const seenWebsites = new Set<string>();
 
     // ==========================================
-    // STEP 1: SEARCH COMPANIES USING SERPER
+    // SEARCH COMPANIES
     // ==========================================
     for (const searchQuery of searches) {
       try {
@@ -43,7 +49,7 @@ export async function POST(req: Request) {
             },
             body: JSON.stringify({
               q: searchQuery,
-              num: limit,
+              num: 100,
             }),
           }
         );
@@ -58,7 +64,7 @@ export async function POST(req: Request) {
           if (!website) continue;
 
           const isBlocked = blockedDomains.some((domain) =>
-            website.includes(domain)
+            website.toLowerCase().includes(domain)
           );
 
           if (isBlocked) continue;
@@ -82,7 +88,7 @@ export async function POST(req: Request) {
       .filter(Boolean);
 
     // ==========================================
-    // STEP 2: EXTRACT EMAILS
+    // EMAIL EXTRACTION
     // ==========================================
     const baseUrl =
       process.env.NEXT_PUBLIC_BASE_URL ||
@@ -104,7 +110,7 @@ export async function POST(req: Request) {
     const extracted = await extractRes.json();
 
     // ==========================================
-    // STEP 3: FINAL RESULTS
+    // FINAL RESULTS
     // ==========================================
     const finalResults = allCompanies.map(
       (company: any, index: number) => ({
