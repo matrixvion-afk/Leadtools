@@ -54,7 +54,7 @@ export async function POST(req: Request) {
             const data = response.data;
             const $ = cheerio.load(data);
 
-            // Emails found in page HTML
+            // Emails found in HTML
             const foundEmails = data.match(emailRegex) || [];
 
             foundEmails.forEach((email: string) => {
@@ -92,9 +92,14 @@ export async function POST(req: Request) {
             !email.endsWith(".jpg") &&
             !email.endsWith(".jpeg") &&
             !email.endsWith(".svg") &&
+            !email.endsWith(".webp") &&
             !email.includes("@2x") &&
             !email.includes("logo") &&
-            !email.includes("example.com")
+            !email.includes("brainbean") &&
+            !email.includes("example.com") &&
+            !email.includes("placeholder") &&
+            !email.includes("noreply") &&
+            !email.includes("no-reply")
         );
 
         console.log("WEBSITE:", website);
