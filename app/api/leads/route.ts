@@ -39,7 +39,6 @@ export async function POST(req: Request) {
     const companies = organic.map((item: any) => ({
       company: item.title || "",
       website: item.link || "",
-      address: item.snippet || "",
     }));
 
     const websites = companies
@@ -69,20 +68,15 @@ export async function POST(req: Request) {
     const extracted = await extractRes.json();
 
     // ==========================================
-    // STEP 3: MERGE RESULTS
+    // STEP 3: FINAL RESULTS
     // ==========================================
     const finalResults = companies.map(
       (company: any, index: number) => ({
         company: company.company,
         website: company.website,
-        address: company.address,
-
-        emails: extracted[index]?.emails || [],
-        phones: extracted[index]?.phones || [],
-
-        facebook: extracted[index]?.facebook || "",
-        linkedin: extracted[index]?.linkedin || "",
-        instagram: extracted[index]?.instagram || "",
+        email:
+          extracted[index]?.emails?.[0] ||
+          "No email found",
       })
     );
 
