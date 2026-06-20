@@ -15,31 +15,31 @@ export async function POST(req: Request) {
         ? website
         : `https://${website}`;
 
-const pagesToCheck = [
-  "",
-  "/contact",
-  "/contact-us",
-  "/about",
-  "/about-us",
-  "/team",
-  "/company",
-  "/support",
-  "/sales",
-  "/wholesale",
-  "/distributors",
-  "/dealer",
-  "/dealers",
-  "/customer-service",
-  "/help",
-  "/faq",
-  "/staff",
-  "/management",
-  "/leadership",
-  "/privacy",
-  "/terms",
-  "/shipping",
-  "/returns",
-];
+    const pagesToCheck = [
+      "",
+      "/contact",
+      "/contact-us",
+      "/about",
+      "/about-us",
+      "/team",
+      "/company",
+      "/support",
+      "/sales",
+      "/wholesale",
+      "/distributors",
+      "/dealer",
+      "/dealers",
+      "/customer-service",
+      "/help",
+      "/faq",
+      "/staff",
+      "/management",
+      "/leadership",
+      "/privacy",
+      "/terms",
+      "/shipping",
+      "/returns",
+    ];
 
     const emailRegex =
       /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
@@ -69,14 +69,17 @@ const pagesToCheck = [
             const data = response.data;
             const $ = cheerio.load(data);
 
-            // Emails found in page HTML
-            const foundEmails = data.match(emailRegex) || [];
+            // Search visible page text only
+            const pageText = $("body").text();
+
+            const foundEmails =
+              pageText.match(emailRegex) || [];
 
             foundEmails.forEach((email: string) => {
               emails.add(email.trim().toLowerCase());
             });
 
-            // Emails from mailto links
+            // Search mailto links
             $("a").each((_, el) => {
               const href = $(el).attr("href") || "";
 
@@ -100,35 +103,46 @@ const pagesToCheck = [
           }
         }
 
-const cleanEmails = Array.from(emails).filter(
-  (email) =>
-    email &&
-    email.includes("@") &&
-    email.length < 80 &&
-    !email.endsWith(".png") &&
-    !email.endsWith(".jpg") &&
-    !email.endsWith(".jpeg") &&
-    !email.endsWith(".svg") &&
-    !email.endsWith(".webp") &&
-    !email.includes("@2x") &&
-    !email.includes("logo") &&
-    !email.includes("brainbean") &&
-    !email.endsWith("@brainbean.in") &&
-    !email.includes("example.com") &&
-    !email.includes("placeholder") &&
-    !email.includes("noreply") &&
-    !email.includes("no-reply") &&
-    !email.includes(".js") &&
-    !email.includes(".css") &&
-    !email.includes("webpack") &&
-    !email.includes("chunk") &&
-    !email.includes("tracking") &&
-    !email.includes("analytics") &&
-    !email.includes("google") &&
-    !email.includes("facebook") &&
-    !email.includes("instagram") &&
-    !email.includes("twitter")
-);
+        const cleanEmails = Array.from(emails).filter(
+          (email) =>
+            email &&
+            email.includes("@") &&
+            email.length < 80 &&
+            !email.endsWith(".png") &&
+            !email.endsWith(".jpg") &&
+            !email.endsWith(".jpeg") &&
+            !email.endsWith(".svg") &&
+            !email.endsWith(".webp") &&
+            !email.includes("@2x") &&
+            !email.includes("logo") &&
+            !email.includes("brainbean") &&
+            !email.endsWith("@brainbean.in") &&
+            !email.includes("example.com") &&
+            !email.includes("placeholder") &&
+            !email.includes("noreply") &&
+            !email.includes("no-reply") &&
+            !email.includes(".js") &&
+            !email.includes(".css") &&
+            !email.includes("webpack") &&
+            !email.includes("chunk") &&
+            !email.includes("tracking") &&
+            !email.includes("analytics") &&
+            !email.includes("google") &&
+            !email.includes("facebook") &&
+            !email.includes("instagram") &&
+            !email.includes("twitter")
+        );
+
+        const finalEmails = cleanEmails.filter(
+          (email) =>
+            email.startsWith("info@") ||
+            email.startsWith("sales@") ||
+            email.startsWith("contact@") ||
+            email.startsWith("support@") ||
+            email.startsWith("admin@") ||
+            email.startsWith("orders@") ||
+            email.startsWith("customerservice@")
+        );
 
         console.log("WEBSITE:", website);
         console.log("EMAILS FOUND:", cleanEmails);
@@ -136,10 +150,18 @@ const cleanEmails = Array.from(emails).filter(
         return {
           website,
           email:
-            cleanEmails.length > 0
-              ? cleanEmails.join(" | ")
-              : "No email found",
-          emails: cleanEmails,
+            (
+              finalEmails.length > 0
+                ? finalEmails
+                : cleanEmails
+            )
+              .slice(0, 3)
+              .join(" | ") || "No email found",
+
+          emails:
+            finalEmails.length > 0
+              ? finalEmails
+              : cleanEmails,
         };
       })
     );
