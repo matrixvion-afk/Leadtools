@@ -34,7 +34,6 @@ export async function POST(req: Request) {
         const baseUrl = normalizeWebsite(website);
 
         const emails = new Set<string>();
-
         const visited = new Set<string>();
 
         for (const path of pagesToCheck) {
@@ -53,40 +52,50 @@ export async function POST(req: Request) {
             });
 
             const data = response.data;
-
             const $ = cheerio.load(data);
 
-            // EMAILS IN PAGE HTML
-            const foundEmails =
-              data.match(emailRegex) || [];
+            // Emails found in page HTML
+            const foundEmails = data.match(emailRegex) || [];
 
             foundEmails.forEach((email: string) => {
-              emails.add(email.toLowerCase());
+              emails.add(email.trim().toLowerCase());
             });
 
-            // MAILTO EMAILS
+            // Emails from mailto links
             $("a").each((_, el) => {
               const href = $(el).attr("href") || "";
 
               if (href.startsWith("mailto:")) {
-                emails.add(
-                  href
-                    .replace("mailto:", "")
-                    .trim()
-                    .toLowerCase()
-                );
+                const email = href
+                  .replace("mailto:", "")
+                  .split("?")[0]
+                  .trim()
+                  .toLowerCase();
+
+                if (email) {
+                  emails.add(email);
+                }
               }
             });
-          } catch (error) {
+          } catch (error: any) {
             console.log(
-              `FAILED: ${website}`,
-              error
+              `FAILED: ${website} ${path}`,
+              error?.message || error
             );
-            continue;
           }
         }
 
-        const cleanEmails = Array.from(emails);
+        const cleanEmails = Array.from(emails).filter(
+          (email) =>
+            email &&
+            !email.endsWith(".png") &&
+            !email.endsWith(".jpg") &&
+            !email.endsWith(".jpeg") &&
+            !email.endsWith(".svg") &&
+            !email.includes("@2x") &&
+            !email.includes("logo") &&
+            !email.includes("example.com")
+        );
 
         console.log("WEBSITE:", website);
         console.log("EMAILS FOUND:", cleanEmails);
@@ -94,8 +103,9 @@ export async function POST(req: Request) {
         return {
           website,
           email:
-            cleanEmails.join(" | ") ||
-            "No email found",
+            cleanEmails.length > 0
+              ? cleanEmails.join(" | ")
+              : "No email found",
           emails: cleanEmails,
         };
       })
