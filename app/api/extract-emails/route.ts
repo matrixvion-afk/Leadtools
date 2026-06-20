@@ -100,23 +100,35 @@ const pagesToCheck = [
           }
         }
 
-        const cleanEmails = Array.from(emails).filter(
-          (email) =>
-            email &&
-            !email.endsWith(".png") &&
-            !email.endsWith(".jpg") &&
-            !email.endsWith(".jpeg") &&
-            !email.endsWith(".svg") &&
-            !email.endsWith(".webp") &&
-            !email.includes("@2x") &&
-            !email.includes("logo") &&
-            !email.includes("brainbean") &&
-            !email.endsWith("@brainbean.in") &&
-            !email.includes("example.com") &&
-            !email.includes("placeholder") &&
-            !email.includes("noreply") &&
-            !email.includes("no-reply")
-        );
+const cleanEmails = Array.from(emails).filter(
+  (email) =>
+    email &&
+    email.includes("@") &&
+    email.length < 80 &&
+    !email.endsWith(".png") &&
+    !email.endsWith(".jpg") &&
+    !email.endsWith(".jpeg") &&
+    !email.endsWith(".svg") &&
+    !email.endsWith(".webp") &&
+    !email.includes("@2x") &&
+    !email.includes("logo") &&
+    !email.includes("brainbean") &&
+    !email.endsWith("@brainbean.in") &&
+    !email.includes("example.com") &&
+    !email.includes("placeholder") &&
+    !email.includes("noreply") &&
+    !email.includes("no-reply") &&
+    !email.includes(".js") &&
+    !email.includes(".css") &&
+    !email.includes("webpack") &&
+    !email.includes("chunk") &&
+    !email.includes("tracking") &&
+    !email.includes("analytics") &&
+    !email.includes("google") &&
+    !email.includes("facebook") &&
+    !email.includes("instagram") &&
+    !email.includes("twitter")
+);
 
         console.log("WEBSITE:", website);
         console.log("EMAILS FOUND:", cleanEmails);
