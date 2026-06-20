@@ -11,7 +11,9 @@ export async function POST(req: Request) {
     }
 
     const normalizeWebsite = (website: string) =>
-      website.startsWith("http") ? website : `https://${website}`;
+      website.startsWith("http")
+        ? website
+        : `https://${website}`;
 
     const pagesToCheck = [
       "",
@@ -22,30 +24,16 @@ export async function POST(req: Request) {
       "/team",
       "/company",
       "/support",
-      "/privacy",
-      "/privacy-policy",
-      "/terms",
-      "/terms-of-service",
     ];
 
     const emailRegex =
       /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
-
-    // STRICT PHONE REGEX
-    const phoneRegex =
-      /(?:\+?1[\s.-]?)?(?:\(?[2-9]\d{2}\)?[\s.-]?)[2-9]\d{2}[\s.-]?\d{4}/g;
 
     const results = await Promise.all(
       websites.map(async (website: string) => {
         const baseUrl = normalizeWebsite(website);
 
         const emails = new Set<string>();
-        const phones = new Set<string>();
-
-        let facebook = "";
-        let linkedin = "";
-        let instagram = "";
-        let twitter = "";
 
         const visited = new Set<string>();
 
@@ -56,73 +44,29 @@ export async function POST(req: Request) {
             if (visited.has(url)) continue;
             visited.add(url);
 
-            const { data } = await axios.get(url, {
-              timeout: 8000,
+            const response = await axios.get(url, {
+              timeout: 10000,
               headers: {
                 "User-Agent":
-                  "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125 Safari/537.36",
               },
             });
 
+            const data = response.data;
+
             const $ = cheerio.load(data);
 
-            // EMAILS
-            const foundEmails = data.match(emailRegex) || [];
+            // EMAILS IN PAGE HTML
+            const foundEmails =
+              data.match(emailRegex) || [];
 
             foundEmails.forEach((email: string) => {
               emails.add(email.toLowerCase());
             });
 
-// PHONES
-const foundPhones = data.match(phoneRegex) || [];
-
-foundPhones.forEach((phone: string) => {
-  const cleaned = phone.replace(/\D/g, "");
-
-  // Reject obvious junk numbers
-  if (
-    cleaned.startsWith("000") ||
-    cleaned.startsWith("111") ||
-    /^(\d)\1+$/.test(cleaned)
-  ) {
-    return;
-  }
-
-  // Validate realistic US/Canada phone numbers
-  if (
-    (cleaned.length === 10 &&
-      /^[2-9]\d{2}[2-9]\d{6}$/.test(cleaned)) ||
-    (cleaned.length === 11 &&
-      cleaned.startsWith("1") &&
-      /^[1][2-9]\d{2}[2-9]\d{6}$/.test(cleaned))
-  ) {
-    phones.add(phone.trim());
-  }
-});
-
-            // SOCIAL LINKS
+            // MAILTO EMAILS
             $("a").each((_, el) => {
               const href = $(el).attr("href") || "";
-
-              if (!facebook && href.includes("facebook.com")) {
-                facebook = href;
-              }
-
-              if (!linkedin && href.includes("linkedin.com")) {
-                linkedin = href;
-              }
-
-              if (!instagram && href.includes("instagram.com")) {
-                instagram = href;
-              }
-
-              if (
-                !twitter &&
-                (href.includes("twitter.com") ||
-                  href.includes("x.com"))
-              ) {
-                twitter = href;
-              }
 
               if (href.startsWith("mailto:")) {
                 emails.add(
@@ -133,59 +77,41 @@ foundPhones.forEach((phone: string) => {
                 );
               }
             });
-
-            // AUTO DISCOVER MORE PAGES
-            $("a").each((_, el) => {
-              const href = $(el).attr("href") || "";
-              const lower = href.toLowerCase();
-
-              if (
-                href.startsWith("/") &&
-                pagesToCheck.length < 20 &&
-                (
-                  lower.includes("contact") ||
-                  lower.includes("about") ||
-                  lower.includes("team") ||
-                  lower.includes("support") ||
-                  lower.includes("privacy") ||
-                  lower.includes("terms")
-                )
-              ) {
-                pagesToCheck.push(href);
-              }
-            });
-          } catch {
+          } catch (error) {
+            console.log(
+              `FAILED: ${website}`,
+              error
+            );
             continue;
           }
         }
 
-        const cleanEmails = Array.from(emails).filter(
-          (e) =>
-            !e.includes("example") &&
-            !e.includes("test") &&
-            !e.includes("gmail") &&
-            !e.includes("yahoo")
-        );
+        const cleanEmails = Array.from(emails);
+
+        console.log("WEBSITE:", website);
+        console.log("EMAILS FOUND:", cleanEmails);
 
         return {
           website,
-          email: cleanEmails.join(" | ") || "",
-          phone: Array.from(phones).join(" | ") || "",
+          email:
+            cleanEmails.join(" | ") ||
+            "No email found",
           emails: cleanEmails,
-          phones: Array.from(phones),
-          facebook,
-          linkedin,
-          instagram,
-          twitter,
         };
       })
     );
 
     return NextResponse.json(results);
   } catch (err) {
+    console.error(err);
+
     return NextResponse.json(
-      { error: "Extraction failed" },
-      { status: 500 }
+      {
+        error: "Extraction failed",
+      },
+      {
+        status: 500,
+      }
     );
   }
 }
