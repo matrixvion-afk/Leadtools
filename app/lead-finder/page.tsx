@@ -59,6 +59,36 @@ export default function LeadFinderPage() {
     setLoading(false);
   };
 
+  const exportCSV = () => {
+    const csvRows = [
+      ["Company Name", "Website", "Email"],
+      ...results.map((item) => [
+        item.company,
+        item.website,
+        item.email || "",
+      ]),
+    ];
+
+    const csvContent = csvRows
+      .map((row) => row.map((cell) => `"${cell}"`).join(","))
+      .join("\n");
+
+    const blob = new Blob([csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "leads.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div
       style={{
@@ -68,7 +98,6 @@ export default function LeadFinderPage() {
         padding: "40px",
       }}
     >
-      {/* Top Menu */}
       <div
         style={{
           display: "flex",
@@ -103,7 +132,6 @@ export default function LeadFinderPage() {
         </a>
       </div>
 
-      {/* Title */}
       <h1
         style={{
           fontSize: "42px",
@@ -115,7 +143,6 @@ export default function LeadFinderPage() {
         Lead Finder
       </h1>
 
-      {/* Search */}
       <div
         style={{
           display: "flex",
@@ -166,6 +193,22 @@ export default function LeadFinderPage() {
         >
           {loading ? "Searching..." : "Find Companies"}
         </button>
+
+        <button
+          onClick={exportCSV}
+          disabled={results.length === 0}
+          style={{
+            padding: "12px 20px",
+            background: "#16a34a",
+            color: "#fff",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer",
+            fontWeight: "bold",
+          }}
+        >
+          Export CSV
+        </button>
       </div>
 
       {error && (
@@ -189,13 +232,8 @@ export default function LeadFinderPage() {
         Results: {results.length}
       </div>
 
-      {/* Results */}
       {results.length > 0 && (
-        <div
-          style={{
-            overflowX: "auto",
-          }}
-        >
+        <div style={{ overflowX: "auto" }}>
           <table
             style={{
               width: "100%",
@@ -205,33 +243,13 @@ export default function LeadFinderPage() {
           >
             <thead>
               <tr>
-                <th
-                  style={{
-                    border: "1px solid #334155",
-                    padding: "12px",
-                    textAlign: "left",
-                  }}
-                >
+                <th style={{ border: "1px solid #334155", padding: "12px", textAlign: "left" }}>
                   Company Name
                 </th>
-
-                <th
-                  style={{
-                    border: "1px solid #334155",
-                    padding: "12px",
-                    textAlign: "left",
-                  }}
-                >
+                <th style={{ border: "1px solid #334155", padding: "12px", textAlign: "left" }}>
                   Website
                 </th>
-
-                <th
-                  style={{
-                    border: "1px solid #334155",
-                    padding: "12px",
-                    textAlign: "left",
-                  }}
-                >
+                <th style={{ border: "1px solid #334155", padding: "12px", textAlign: "left" }}>
                   Email
                 </th>
               </tr>
@@ -240,39 +258,22 @@ export default function LeadFinderPage() {
             <tbody>
               {results.map((item, index) => (
                 <tr key={index}>
-                  <td
-                    style={{
-                      border: "1px solid #334155",
-                      padding: "12px",
-                    }}
-                  >
+                  <td style={{ border: "1px solid #334155", padding: "12px" }}>
                     {item.company}
                   </td>
 
-                  <td
-                    style={{
-                      border: "1px solid #334155",
-                      padding: "12px",
-                    }}
-                  >
+                  <td style={{ border: "1px solid #334155", padding: "12px" }}>
                     <a
                       href={item.website}
                       target="_blank"
                       rel="noreferrer"
-                      style={{
-                        color: "#60a5fa",
-                      }}
+                      style={{ color: "#60a5fa" }}
                     >
                       {item.website}
                     </a>
                   </td>
 
-                  <td
-                    style={{
-                      border: "1px solid #334155",
-                      padding: "12px",
-                    }}
-                  >
+                  <td style={{ border: "1px solid #334155", padding: "12px" }}>
                     {item.email || "No email found"}
                   </td>
                 </tr>
